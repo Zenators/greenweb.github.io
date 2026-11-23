@@ -1,3 +1,4 @@
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,6 +11,9 @@ class Settings(BaseSettings):
 
     SESSION_HTTPS_ONLY: bool | None = None
 
+    # Allowed hosts untuk localhost dan deployment
+    ALLOWED_HOSTS: str = "localhost,127.0.0.1"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore"
@@ -21,15 +25,13 @@ class Settings(BaseSettings):
                 self.APP_ENV.lower() == "production"
             )
 
+    @property
+    def allowed_hosts_list(self) -> list[str]:
+        return [
+            host.strip()
+            for host in self.ALLOWED_HOSTS.split(",")
+            if host.strip()
+        ]
+
 
 settings = Settings()
-
-ALLOWED_HOSTS: str = "localhost,127.0.0.1"
-
-@property
-def allowed_hosts_list(self) -> list[str]:
-    return [
-        host.strip()
-        for host in self.ALLOWED_HOSTS.split(",")
-        if host.strip()
-    ]
