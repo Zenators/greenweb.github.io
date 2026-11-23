@@ -23,3 +23,13 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+ALLOWED_HOSTS: str = "localhost,127.0.0.1"
+
+@property
+def allowed_hosts_list(self) -> list[str]:
+    return [
+        host.strip()
+        for host in self.ALLOWED_HOSTS.split(",")
+        if host.strip()
+    ]

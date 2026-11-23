@@ -8,6 +8,7 @@ env/
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
 
 # Environment / Secret Files
 .env
@@ -39,3 +40,5 @@ Thumbs.db
 # Hasil audit keamanan
 hasil_audit.json
 hasil_semgrep.json
+
+private_uploads/
