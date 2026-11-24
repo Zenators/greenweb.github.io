@@ -105,7 +105,7 @@
                     <!-- BUKTI PEMBAYARAN -->
                     <h3>Bukti Pembayaran</h3>
 
-                    {% if payment.proof_path %}
+                    {% if payment.proof_data or payment.proof_path %}
 
                         <a href="/payments/proof/{{ payment.id }}"
                            target="_blank"

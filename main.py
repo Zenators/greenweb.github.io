@@ -556,48 +556,45 @@ def upload_payment_proof(
 
     if content.startswith(b"\xff\xd8\xff"):
         extension = ".jpg"
+        content_type = "image/jpeg"
+
     elif content.startswith(b"\x89PNG\r\n\x1a\n"):
         extension = ".png"
+        content_type = "image/png"
+
     elif content.startswith(b"%PDF-"):
         extension = ".pdf"
+        content_type = "application/pdf"
+
     else:
         raise HTTPException(
             status_code=400,
             detail="File harus JPG, PNG, atau PDF"
         )
 
-    upload_dir = Path("private_uploads/payment_proofs")
-    upload_dir.mkdir(parents=True, exist_ok=True)
-
+    # Gunakan nama acak agar tidak menyimpan nama file asli
     filename = f"{uuid4().hex}{extension}"
-    file_path = upload_dir / filename
 
     try:
-        file_path.write_bytes(content)
-
         submit_payment_proof(
             db=db,
             order_id=order_id,
             user_id=user.id,
-            proof_path=str(file_path),
+            proof_data=content,
+            proof_filename=filename,
+            proof_content_type=content_type,
         )
 
     except ValueError as error:
-        file_path.unlink(missing_ok=True)
         raise HTTPException(
             status_code=400,
             detail=str(error)
         )
 
-    except Exception:
-        file_path.unlink(missing_ok=True)
-        raise
-
     return RedirectResponse(
         url=f"/payment/{order_id}",
         status_code=303
     )
-
 
 # =========================
 # VIEW PAYMENT PROOF
@@ -611,12 +608,13 @@ def view_payment_proof(
 ):
     payment = get_payment_by_id(db, payment_id)
 
-    if not payment or not payment.proof_path:
+    if not payment:
         raise HTTPException(
             status_code=404,
             detail="Bukti pembayaran tidak ditemukan"
         )
 
+    # Pastikan hanya pemilik pesanan atau admin yang dapat melihat
     if (
         payment.order.user_id != user.id
         and user.role != "admin"
@@ -626,29 +624,58 @@ def view_payment_proof(
             detail="Tidak memiliki akses"
         )
 
-    path = Path(payment.proof_path)
+    # Ambil file langsung dari PostgreSQL
+    if payment.proof_data:
+        allowed_types = {
+            "image/jpeg",
+            "image/png",
+            "application/pdf",
+        }
 
-    if not path.is_file():
-        raise HTTPException(
-            status_code=404,
-            detail="File tidak ditemukan"
+        content_type = payment.proof_content_type
+
+        if content_type not in allowed_types:
+            raise HTTPException(
+                status_code=415,
+                detail="Format bukti pembayaran tidak valid"
+            )
+
+        filename = payment.proof_filename or "bukti-pembayaran"
+
+        return Response(
+            content=payment.proof_data,
+            media_type=content_type,
+            headers={
+                "Content-Disposition": f'inline; filename="{filename}"',
+                "X-Content-Type-Options": "nosniff",
+                "Cache-Control": "private, no-store",
+            }
         )
 
-    media_types = {
-        ".jpg": "image/jpeg",
-        ".png": "image/png",
-        ".pdf": "application/pdf",
-    }
+    # Fallback untuk file lama yang masih tersimpan di folder lokal
+    if payment.proof_path:
+        path = Path(payment.proof_path)
 
-    return FileResponse(
-    path=path,
-    media_type=media_types.get(path.suffix.lower()),
-    headers={
-        "Content-Disposition": "inline"
-    }
-)
+        if path.is_file():
+            media_types = {
+                ".jpg": "image/jpeg",
+                ".png": "image/png",
+                ".pdf": "application/pdf",
+            }
 
+            return FileResponse(
+                path=path,
+                media_type=media_types.get(path.suffix.lower()),
+                headers={
+                    "Content-Disposition": "inline",
+                    "Cache-Control": "private, no-store",
+                }
+            )
 
+    raise HTTPException(
+        status_code=404,
+        detail="Bukti pembayaran tidak ditemukan"
+    )
 # =========================
 # ADMIN PAYMENT LIST
 # =========================

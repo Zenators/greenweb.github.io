@@ -1,4 +1,3 @@
-
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -12,6 +11,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    LargeBinary,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -278,11 +278,27 @@ class Payment(Base):
         nullable=False
     )
 
+    # Bukti pembayaran tersimpan langsung di PostgreSQL
+    proof_data: Mapped[bytes | None] = mapped_column(
+        LargeBinary,
+        nullable=True
+    )
+
+    proof_filename: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True
+    )
+
+    proof_content_type: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    # Dipertahankan untuk kompatibilitas file lama
     proof_path: Mapped[str | None] = mapped_column(
         Text,
         nullable=True
     )
-
     verified_by: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True

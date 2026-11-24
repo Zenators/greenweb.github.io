@@ -122,15 +122,24 @@
 
             </div>
 
-        {% elif payment.status == "waiting_verification" %}
+       {% elif payment.status == "waiting_verification" %}
 
-            <div class="payment-card">
-                <h2>Bukti Pembayaran Terkirim</h2>
-                <p>Bukti pembayaran berhasil dikirim.</p>
-                <p>Admin sedang memeriksa pembayaran kamu.</p>
-                <p>Silakan tunggu hingga proses verifikasi selesai.</p>
-            </div>
+    <div class="payment-card">
+        <h2>Bukti Pembayaran Terkirim</h2>
 
+        <p>Bukti pembayaran berhasil dikirim.</p>
+        <p>Admin sedang memeriksa pembayaran kamu.</p>
+        <p>Silakan tunggu hingga proses verifikasi selesai.</p>
+
+        {% if payment.proof_data or payment.proof_path %}
+            <a href="/payments/proof/{{ payment.id }}"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="btn btn-outline">
+                Lihat Bukti Pembayaran
+            </a>
+        {% endif %}
+    </div>
         {% elif payment.status == "paid" %}
 
             <div class="payment-card">

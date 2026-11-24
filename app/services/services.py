@@ -590,7 +590,9 @@ def submit_payment_proof(
     db: Session,
     order_id: int,
     user_id: int,
-    proof_path: str,
+    proof_data: bytes,
+    proof_filename: str,
+    proof_content_type: str,
 ):
     try:
         order = db.scalar(
@@ -617,9 +619,17 @@ def submit_payment_proof(
         if payment.status not in {"pending", "rejected"}:
             raise ValueError("Pembayaran tidak dapat diubah")
 
-        payment.proof_path = proof_path
+        payment.proof_data = proof_data
+        payment.proof_filename = proof_filename
+        payment.proof_content_type = proof_content_type
+
+        # File baru tidak lagi menggunakan penyimpanan lokal
+        payment.proof_path = None
+
         payment.status = "waiting_verification"
         payment.rejection_reason = None
+        payment.verified_by = None
+        payment.verified_at = None
 
         record_activity(
             db,
@@ -637,7 +647,6 @@ def submit_payment_proof(
     except Exception:
         db.rollback()
         raise
-
 
 def get_user_payment(
     db: Session,
@@ -687,9 +696,9 @@ def approve_payment(
             .with_for_update()
         )
 
-        if not payment:
-            raise ValueError("Pembayaran tidak ditemukan")
-
+        if not payment.proof_data and not payment.proof_path:
+            raise ValueError("Bukti pembayaran tidak ditemukan")
+        
         if payment.status != "waiting_verification":
             raise ValueError("Pembayaran belum siap diverifikasi")
 

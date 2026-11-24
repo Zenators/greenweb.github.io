@@ -337,7 +337,7 @@
                                     <!-- BUKTI PEMBAYARAN -->
                                     <td>
                                         {% if order.payment
-                                              and order.payment.proof_path %}
+                                              {% if payment.proof_data or payment.proof_path %}}
 
                                             <a
                                                 href="/payments/proof/{{ order.payment.id }}"
