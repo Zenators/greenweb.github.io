@@ -63,6 +63,14 @@ from fastapi.responses import (
     Response,
     FileResponse,
 )
+<<<<<<< HEAD
+=======
+from app.services.pdf_reports import (
+    generate_user_orders_pdf,
+    generate_single_order_pdf,
+    generate_admin_orders_pdf,
+)
+>>>>>>> 6c520a0 (Perbaikan PDF)
 
 # =========================
 # APPLICATION
@@ -83,7 +91,14 @@ app = FastAPI(
 
 app.add_middleware(
     TrustedHostMiddleware,
+<<<<<<< HEAD
     allowed_hosts=settings.allowed_hosts_list
+=======
+    allowed_hosts=[
+        "localhost",
+        "127.0.0.1",
+    ]
+>>>>>>> 6c520a0 (Perbaikan PDF)
 )
 
 @app.middleware("http")
@@ -963,3 +978,79 @@ def add_planting(
             status_code=400,
             detail=str(error)
         )
+<<<<<<< HEAD
+=======
+
+# =========================
+# USER: DOWNLOAD PDF REPORT
+# =========================
+
+@app.get("/orders/report.pdf")
+def download_user_orders_report(
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    orders = get_user_orders(db, user.id)
+
+    pdf = generate_user_orders_pdf(user, orders)
+
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition":
+                'inline; filename="greenroots-riwayat-pesanan.pdf"'
+        },
+    )
+
+
+# =========================
+# USER: DOWNLOAD SINGLE ORDER PDF
+# =========================
+
+@app.get("/orders/{order_id}/report.pdf")
+def download_single_order_report(
+    order_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    order = get_order_detail(db, order_id, user.id)
+
+    if not order:
+        raise HTTPException(
+            status_code=404,
+            detail="Pesanan tidak ditemukan",
+        )
+
+    pdf = generate_single_order_pdf(user, order)
+
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition":
+                f'inline; filename="greenroots-pesanan-{order.id}.pdf"'
+        },
+    )
+
+
+# =========================
+# ADMIN: DOWNLOAD ALL ORDERS PDF
+# =========================
+
+@app.get("/admin/reports/orders.pdf")
+def download_admin_orders_report(
+    db: Session = Depends(get_db),
+    admin=Depends(require_admin),
+):
+    orders = get_all_orders(db)
+    pdf = generate_admin_orders_pdf(orders)
+
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": 'inline; filename="greenroots-laporan-transaksi.pdf"'
+        },
+    )
+>>>>>>> 6c520a0 (Perbaikan PDF)

@@ -8,7 +8,10 @@ env/
 __pycache__/
 *.py[cod]
 *$py.class
+<<<<<<< HEAD
 *.pyc
+=======
+>>>>>>> 6c520a0 (Perbaikan PDF)
 
 # Environment / Secret Files
 .env
@@ -39,6 +42,10 @@ Thumbs.db
 
 # Hasil audit keamanan
 hasil_audit.json
+<<<<<<< HEAD
 hasil_semgrep.json
 
 private_uploads/
+=======
+hasil_semgrep.json
+>>>>>>> 6c520a0 (Perbaikan PDF)
