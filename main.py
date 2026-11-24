@@ -88,10 +88,7 @@ app = FastAPI(
 
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=[
-        "localhost",
-        "127.0.0.1",
-    ]
+    allowed_hosts=settings.allowed_hosts_list,
 )
 
 @app.middleware("http")
