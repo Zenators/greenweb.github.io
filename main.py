@@ -1,76 +1,67 @@
-from fastapi import (
-    FastAPI,
-    Request,
-    Form,
-    Depends,
-    HTTPException,
-    UploadFile,
-    File,
-)
-from starlette.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
-
-from database import get_db
-from config import settings
-
-from security import (
-    get_current_user,
-    require_admin,
-    create_session,
-    destroy_session,
-    verify_csrf,
-    create_anonymous_csrf,
-    verify_anonymous_csrf,
-    get_session,
-)
-
-from app.services.services import (
-    register_user,
-    authenticate_user,
-    get_programs,
-    get_all_programs,
-    create_program,
-    update_program,
-    deactivate_program,
-    create_order,
-    get_order_detail,
-    get_user_orders,
-    get_all_orders,
-    get_all_users,
-    get_all_plantings,
-    create_planting,
-    record_activity,
-
-    # PAYMENT
-    create_payment,
-    submit_payment_proof,
-    get_user_payment,
-    get_all_payments,
-    get_payment_by_id,
-    approve_payment,
-    reject_payment,
-)
-
 from pathlib import Path
 from uuid import uuid4
 
+from fastapi import (
+    Depends,
+    FastAPI,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    UploadFile,
+)
 from fastapi.responses import (
+    FileResponse,
     HTMLResponse,
     RedirectResponse,
     Response,
-    FileResponse,
 )
-<<<<<<< HEAD
-=======
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+
 from app.services.pdf_reports import (
-    generate_user_orders_pdf,
-    generate_single_order_pdf,
     generate_admin_orders_pdf,
+    generate_single_order_pdf,
+    generate_user_orders_pdf,
 )
->>>>>>> 6c520a0 (Perbaikan PDF)
+from app.services.services import (
+    approve_payment,
+    authenticate_user,
+    create_order,
+    create_payment,
+    create_planting,
+    create_program,
+    deactivate_program,
+    get_all_orders,
+    get_all_payments,
+    get_all_plantings,
+    get_all_programs,
+    get_all_users,
+    get_order_detail,
+    get_payment_by_id,
+    get_programs,
+    get_user_orders,
+    get_user_payment,
+    record_activity,
+    register_user,
+    reject_payment,
+    submit_payment_proof,
+    update_program,
+)
+from config import settings
+from database import get_db
+from security import (
+    create_anonymous_csrf,
+    create_session,
+    destroy_session,
+    get_current_user,
+    get_session,
+    require_admin,
+    verify_anonymous_csrf,
+    verify_csrf,
+)
 
 # =========================
 # APPLICATION
@@ -85,43 +76,39 @@ app = FastAPI(
     openapi_url=None if IS_PRODUCTION else "/openapi.json",
     debug=False,
 )
+
 # =========================
 # SECURITY MIDDLEWARE
 # =========================
 
 app.add_middleware(
     TrustedHostMiddleware,
-<<<<<<< HEAD
-    allowed_hosts=settings.allowed_hosts_list
-=======
-    allowed_hosts=[
-        "localhost",
-        "127.0.0.1",
-    ]
->>>>>>> 6c520a0 (Perbaikan PDF)
+    allowed_hosts=settings.allowed_hosts_list,
 )
+
 
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
     response = await call_next(request)
 
     response.headers["Content-Security-Policy"] = (
-    "default-src 'self'; "
-    "script-src 'self' 'unsafe-inline'; "
-    "base-uri 'self'; "
-    "form-action 'self'; "
-    "frame-ancestors 'none'"
-)
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline'; "
+        "base-uri 'self'; "
+        "form-action 'self'; "
+        "frame-ancestors 'none'"
+    )
 
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-Content-Type-Options"] = "nosniff"
 
     return response
 
+
 app.mount(
     "/static",
     StaticFiles(directory="app/static"),
-    name="static"
+    name="static",
 )
 
 templates = Jinja2Templates(directory="app/templates")
@@ -177,6 +164,7 @@ def save_program_image(upload: UploadFile | None):
 # HELPER
 # =========================
 
+
 def get_optional_user(request: Request, db: Session):
     session = get_session(request, db)
 
@@ -203,7 +191,7 @@ def render_auth_page(request: Request, error=None, status_code=200):
             "csrf_token": token,
             "error": error,
         },
-        status_code=status_code
+        status_code=status_code,
     )
 
     # Salin cookie CSRF ke response halaman login
@@ -218,10 +206,11 @@ def render_auth_page(request: Request, error=None, status_code=200):
 # HOME
 # =========================
 
+
 @app.get("/", response_class=HTMLResponse)
 def home(
     request: Request,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     user, csrf_token = get_optional_user(request, db)
 
@@ -233,7 +222,7 @@ def home(
             "app_name": settings.APP_NAME,
             "user": user,
             "csrf_token": csrf_token,
-        }
+        },
     )
 
 
@@ -241,10 +230,11 @@ def home(
 # PROGRAMS
 # =========================
 
+
 @app.get("/programs", response_class=HTMLResponse)
 def programs(
     request: Request,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     user, csrf_token = get_optional_user(request, db)
 
@@ -258,13 +248,14 @@ def programs(
             "programs": data,
             "user": user,
             "csrf_token": csrf_token,
-        }
+        },
     )
 
 
 # =========================
 # AUTH PAGE
 # =========================
+
 
 @app.get("/auth", response_class=HTMLResponse)
 def auth_page(request: Request):
@@ -275,6 +266,7 @@ def auth_page(request: Request):
 # REGISTER
 # =========================
 
+
 @app.post("/register")
 def register(
     request: Request,
@@ -282,7 +274,7 @@ def register(
     email: str = Form(...),
     password: str = Form(...),
     csrf_token: str = Form(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     verify_anonymous_csrf(request, csrf_token)
 
@@ -297,7 +289,7 @@ def register(
 
         response = RedirectResponse(
             url="/dashboard",
-            status_code=303
+            status_code=303,
         )
 
         create_session(response, user, db)
@@ -307,7 +299,7 @@ def register(
             path="/",
             secure=settings.SESSION_HTTPS_ONLY,
             samesite="lax",
-            httponly=True
+            httponly=True,
         )
 
         return response
@@ -316,7 +308,7 @@ def register(
         return render_auth_page(
             request,
             error="Data registrasi tidak valid atau email sudah digunakan.",
-            status_code=400
+            status_code=400,
         )
 
 
@@ -324,13 +316,14 @@ def register(
 # LOGIN
 # =========================
 
+
 @app.post("/login")
 def login(
     request: Request,
     email: str = Form(...),
     password: str = Form(...),
     csrf_token: str = Form(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     verify_anonymous_csrf(request, csrf_token)
 
@@ -346,12 +339,12 @@ def login(
         return render_auth_page(
             request,
             error=login_error,
-            status_code=401
+            status_code=401,
         )
 
     response = RedirectResponse(
         url="/admin" if user.role == "admin" else "/dashboard",
-        status_code=303
+        status_code=303,
     )
 
     create_session(response, user, db)
@@ -360,7 +353,7 @@ def login(
         "greenroots_csrf",
         path="/",
         secure=settings.SESSION_HTTPS_ONLY,
-        samesite="lax"
+        samesite="lax",
     )
 
     return response
@@ -370,18 +363,19 @@ def login(
 # LOGOUT
 # =========================
 
+
 @app.post("/logout")
 def logout(
     request: Request,
     csrf_token: str = Form(...),
     db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    user=Depends(get_current_user),
 ):
     verify_csrf(request, csrf_token, db)
 
     response = RedirectResponse(
         url="/",
-        status_code=303
+        status_code=303,
     )
 
     record_activity(
@@ -404,11 +398,12 @@ def logout(
 # USER DASHBOARD
 # =========================
 
+
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(
     request: Request,
     db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    user=Depends(get_current_user),
 ):
     orders = get_user_orders(db, user.id)
 
@@ -420,14 +415,14 @@ def dashboard(
             "user": user,
             "orders": orders,
             "csrf_token": request.state.csrf_token,
-        }
+        },
     )
-
 
 
 # =========================
 # CREATE ORDER
 # =========================
+
 
 @app.post("/orders")
 def order_program(
@@ -436,7 +431,7 @@ def order_program(
     quantity: int = Form(...),
     csrf_token: str = Form(...),
     db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    user=Depends(get_current_user),
 ):
     verify_csrf(request, csrf_token, db)
 
@@ -451,13 +446,13 @@ def order_program(
 
         return RedirectResponse(
             url=f"/payment/{order.id}",
-            status_code=303
+            status_code=303,
         )
 
     except ValueError as error:
         raise HTTPException(
             status_code=400,
-            detail=str(error)
+            detail=str(error),
         )
 
 
@@ -465,19 +460,20 @@ def order_program(
 # PAYMENT PAGE
 # =========================
 
+
 @app.get("/payment/{order_id}", response_class=HTMLResponse)
 def payment_page(
     order_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    user=Depends(get_current_user),
 ):
     order = get_order_detail(db, order_id, user.id)
 
     if not order:
         raise HTTPException(
             status_code=404,
-            detail="Pesanan tidak ditemukan"
+            detail="Pesanan tidak ditemukan",
         )
 
     payment = get_user_payment(db, order_id, user.id)
@@ -491,13 +487,14 @@ def payment_page(
             "order": order,
             "payment": payment,
             "csrf_token": request.state.csrf_token,
-        }
+        },
     )
 
 
 # =========================
 # SELECT PAYMENT METHOD
 # =========================
+
 
 @app.post("/payment/{order_id}")
 def select_payment_method(
@@ -506,7 +503,7 @@ def select_payment_method(
     payment_method: str = Form(...),
     csrf_token: str = Form(...),
     db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    user=Depends(get_current_user),
 ):
     verify_csrf(request, csrf_token, db)
 
@@ -520,19 +517,20 @@ def select_payment_method(
 
         return RedirectResponse(
             url=f"/payment/{order_id}",
-            status_code=303
+            status_code=303,
         )
 
     except ValueError as error:
         raise HTTPException(
             status_code=400,
-            detail=str(error)
+            detail=str(error),
         )
 
 
 # =========================
 # UPLOAD PAYMENT PROOF
 # =========================
+
 
 @app.post("/payment/{order_id}/proof")
 def upload_payment_proof(
@@ -541,7 +539,7 @@ def upload_payment_proof(
     proof: UploadFile = File(...),
     csrf_token: str = Form(...),
     db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    user=Depends(get_current_user),
 ):
     verify_csrf(request, csrf_token, db)
 
@@ -550,7 +548,7 @@ def upload_payment_proof(
     if not payment:
         raise HTTPException(
             status_code=404,
-            detail="Pembayaran tidak ditemukan"
+            detail="Pembayaran tidak ditemukan",
         )
 
     content = proof.file.read(5 * 1024 * 1024 + 1)
@@ -558,7 +556,7 @@ def upload_payment_proof(
     if not content or len(content) > 5 * 1024 * 1024:
         raise HTTPException(
             status_code=400,
-            detail="Ukuran file maksimal 5 MB"
+            detail="Ukuran file maksimal 5 MB",
         )
 
     if content.startswith(b"\xff\xd8\xff"):
@@ -570,7 +568,7 @@ def upload_payment_proof(
     else:
         raise HTTPException(
             status_code=400,
-            detail="File harus JPG, PNG, atau PDF"
+            detail="File harus JPG, PNG, atau PDF",
         )
 
     upload_dir = Path("private_uploads/payment_proofs")
@@ -593,7 +591,7 @@ def upload_payment_proof(
         file_path.unlink(missing_ok=True)
         raise HTTPException(
             status_code=400,
-            detail=str(error)
+            detail=str(error),
         )
 
     except Exception:
@@ -602,7 +600,7 @@ def upload_payment_proof(
 
     return RedirectResponse(
         url=f"/payment/{order_id}",
-        status_code=303
+        status_code=303,
     )
 
 
@@ -610,27 +608,25 @@ def upload_payment_proof(
 # VIEW PAYMENT PROOF
 # =========================
 
+
 @app.get("/payments/proof/{payment_id}")
 def view_payment_proof(
     payment_id: int,
     db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    user=Depends(get_current_user),
 ):
     payment = get_payment_by_id(db, payment_id)
 
     if not payment or not payment.proof_path:
         raise HTTPException(
             status_code=404,
-            detail="Bukti pembayaran tidak ditemukan"
+            detail="Bukti pembayaran tidak ditemukan",
         )
 
-    if (
-        payment.order.user_id != user.id
-        and user.role != "admin"
-    ):
+    if payment.order.user_id != user.id and user.role != "admin":
         raise HTTPException(
             status_code=403,
-            detail="Tidak memiliki akses"
+            detail="Tidak memiliki akses",
         )
 
     path = Path(payment.proof_path)
@@ -638,7 +634,7 @@ def view_payment_proof(
     if not path.is_file():
         raise HTTPException(
             status_code=404,
-            detail="File tidak ditemukan"
+            detail="File tidak ditemukan",
         )
 
     media_types = {
@@ -648,23 +644,22 @@ def view_payment_proof(
     }
 
     return FileResponse(
-    path=path,
-    media_type=media_types.get(path.suffix.lower()),
-    headers={
-        "Content-Disposition": "inline"
-    }
-)
+        path=path,
+        media_type=media_types.get(path.suffix.lower()),
+        headers={"Content-Disposition": "inline"},
+    )
 
 
 # =========================
 # ADMIN PAYMENT LIST
 # =========================
 
+
 @app.get("/admin/payments", response_class=HTMLResponse)
 def admin_payments(
     request: Request,
     db: Session = Depends(get_db),
-    admin=Depends(require_admin)
+    admin=Depends(require_admin),
 ):
     payments = get_all_payments(db)
 
@@ -676,7 +671,7 @@ def admin_payments(
             "admin": admin,
             "payments": payments,
             "csrf_token": request.state.csrf_token,
-        }
+        },
     )
 
 
@@ -684,13 +679,14 @@ def admin_payments(
 # ADMIN APPROVE PAYMENT
 # =========================
 
+
 @app.post("/admin/payments/{payment_id}/approve")
 def admin_approve_payment(
     payment_id: int,
     request: Request,
     csrf_token: str = Form(...),
     db: Session = Depends(get_db),
-    admin=Depends(require_admin)
+    admin=Depends(require_admin),
 ):
     verify_csrf(request, csrf_token, db)
 
@@ -703,19 +699,20 @@ def admin_approve_payment(
 
         return RedirectResponse(
             url="/admin/payments",
-            status_code=303
+            status_code=303,
         )
 
     except ValueError as error:
         raise HTTPException(
             status_code=400,
-            detail=str(error)
+            detail=str(error),
         )
 
 
 # =========================
 # ADMIN REJECT PAYMENT
 # =========================
+
 
 @app.post("/admin/payments/{payment_id}/reject")
 def admin_reject_payment(
@@ -724,7 +721,7 @@ def admin_reject_payment(
     rejection_reason: str = Form(...),
     csrf_token: str = Form(...),
     db: Session = Depends(get_db),
-    admin=Depends(require_admin)
+    admin=Depends(require_admin),
 ):
     verify_csrf(request, csrf_token, db)
 
@@ -738,13 +735,13 @@ def admin_reject_payment(
 
         return RedirectResponse(
             url="/admin/payments",
-            status_code=303
+            status_code=303,
         )
 
     except ValueError as error:
         raise HTTPException(
             status_code=400,
-            detail=str(error)
+            detail=str(error),
         )
 
 
@@ -752,11 +749,12 @@ def admin_reject_payment(
 # ADMIN DASHBOARD
 # =========================
 
+
 @app.get("/admin", response_class=HTMLResponse)
 def admin_dashboard(
     request: Request,
     db: Session = Depends(get_db),
-    admin=Depends(require_admin)
+    admin=Depends(require_admin),
 ):
     return templates.TemplateResponse(
         request=request,
@@ -765,20 +763,19 @@ def admin_dashboard(
             "request": request,
             "user": admin,
             "admin": admin,
-
             "users": get_all_users(db),
             "orders": get_all_orders(db),
             "plantings": get_all_plantings(db),
             "products": get_all_programs(db),
-
             "csrf_token": request.state.csrf_token,
-        }
+        },
     )
 
 
 # =========================
 # ADMIN: ADD PRODUCT
 # =========================
+
 
 @app.post("/admin/products")
 def add_product(
@@ -793,7 +790,7 @@ def add_product(
     image: UploadFile | None = File(None),
     csrf_token: str = Form(...),
     db: Session = Depends(get_db),
-    admin=Depends(require_admin)
+    admin=Depends(require_admin),
 ):
     verify_csrf(request, csrf_token, db)
 
@@ -818,7 +815,7 @@ def add_product(
 
         return RedirectResponse(
             url="/admin",
-            status_code=303
+            status_code=303,
         )
 
     except ValueError as error:
@@ -829,7 +826,7 @@ def add_product(
 
         raise HTTPException(
             status_code=400,
-            detail=str(error)
+            detail=str(error),
         )
 
     except Exception:
@@ -839,9 +836,11 @@ def add_product(
             )
         raise
 
+
 # =========================
 # ADMIN: UPDATE PRODUCT
 # =========================
+
 
 @app.post("/admin/products/{program_id}/update")
 def edit_product(
@@ -858,7 +857,7 @@ def edit_product(
     image: UploadFile | None = File(None),
     csrf_token: str = Form(...),
     db: Session = Depends(get_db),
-    admin=Depends(require_admin)
+    admin=Depends(require_admin),
 ):
     verify_csrf(request, csrf_token, db)
 
@@ -885,7 +884,7 @@ def edit_product(
 
         return RedirectResponse(
             url="/admin",
-            status_code=303
+            status_code=303,
         )
 
     except ValueError as error:
@@ -896,7 +895,7 @@ def edit_product(
 
         raise HTTPException(
             status_code=400,
-            detail=str(error)
+            detail=str(error),
         )
 
     except Exception:
@@ -911,13 +910,14 @@ def edit_product(
 # ADMIN: DEACTIVATE PRODUCT
 # =========================
 
+
 @app.post("/admin/products/{program_id}/deactivate")
 def remove_product(
     program_id: int,
     request: Request,
     csrf_token: str = Form(...),
     db: Session = Depends(get_db),
-    admin=Depends(require_admin)
+    admin=Depends(require_admin),
 ):
     verify_csrf(request, csrf_token, db)
 
@@ -931,19 +931,20 @@ def remove_product(
 
         return RedirectResponse(
             url="/admin",
-            status_code=303
+            status_code=303,
         )
 
     except ValueError as error:
         raise HTTPException(
             status_code=400,
-            detail=str(error)
+            detail=str(error),
         )
 
 
 # =========================
 # ADMIN: PLANTING REPORT
 # =========================
+
 
 @app.post("/admin/plantings")
 def add_planting(
@@ -954,7 +955,7 @@ def add_planting(
     notes: str = Form(""),
     csrf_token: str = Form(...),
     db: Session = Depends(get_db),
-    admin=Depends(require_admin)
+    admin=Depends(require_admin),
 ):
     verify_csrf(request, csrf_token, db)
 
@@ -970,20 +971,20 @@ def add_planting(
 
         return RedirectResponse(
             url="/admin",
-            status_code=303
+            status_code=303,
         )
 
     except ValueError as error:
         raise HTTPException(
             status_code=400,
-            detail=str(error)
+            detail=str(error),
         )
-<<<<<<< HEAD
-=======
+
 
 # =========================
 # USER: DOWNLOAD PDF REPORT
 # =========================
+
 
 @app.get("/orders/report.pdf")
 def download_user_orders_report(
@@ -998,8 +999,7 @@ def download_user_orders_report(
         content=pdf,
         media_type="application/pdf",
         headers={
-            "Content-Disposition":
-                'inline; filename="greenroots-riwayat-pesanan.pdf"'
+            "Content-Disposition": 'inline; filename="greenroots-riwayat-pesanan.pdf"'
         },
     )
 
@@ -1007,6 +1007,7 @@ def download_user_orders_report(
 # =========================
 # USER: DOWNLOAD SINGLE ORDER PDF
 # =========================
+
 
 @app.get("/orders/{order_id}/report.pdf")
 def download_single_order_report(
@@ -1028,8 +1029,7 @@ def download_single_order_report(
         content=pdf,
         media_type="application/pdf",
         headers={
-            "Content-Disposition":
-                f'inline; filename="greenroots-pesanan-{order.id}.pdf"'
+            "Content-Disposition": f'inline; filename="greenroots-pesanan-{order.id}.pdf"'
         },
     )
 
@@ -1037,6 +1037,7 @@ def download_single_order_report(
 # =========================
 # ADMIN: DOWNLOAD ALL ORDERS PDF
 # =========================
+
 
 @app.get("/admin/reports/orders.pdf")
 def download_admin_orders_report(
@@ -1053,4 +1054,3 @@ def download_admin_orders_report(
             "Content-Disposition": 'inline; filename="greenroots-laporan-transaksi.pdf"'
         },
     )
->>>>>>> 6c520a0 (Perbaikan PDF)
